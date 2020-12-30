@@ -190,8 +190,8 @@ def main(args):
     trainer = Trainer(gpus=1, logger=logger, max_epochs=10)
     
     # data
-    train_data = SeqData(genome="/home/stuartt/atac-cnn/data/hg38.fa", data_path=args.train_data, window=1000)
-    val_data = SeqData(genome="/home/stuartt/atac-cnn/data/hg38.fa", data_path=args.val_data, window=1000)
+    train_data = SeqData(genome=args.genome, data_path=args.train_data, window=1000)
+    val_data = SeqData(genome=args.genome, data_path=args.val_data, window=1000)
     train_loader = DataLoader(train_data, batch_size=64, num_workers=1)
     val_loader = DataLoader(val_data, batch_size=64, num_workers=1)
     
@@ -205,6 +205,7 @@ if __name__ == '__main__':
     parser.add_argument("--exp_name", help="Name for the experiment (shown in logger)", type=str, required=True)
     parser.add_argument("--train_data", help="Path to training data", type=str, required=True)
     parser.add_argument("--val_data", help="Path to validation data", type=str, required=True)
+    parser.add_argument("--genome", help="Path to genome fasta file", type=str, required=True)
     args = parser.parse_args()
 
     main(args)
