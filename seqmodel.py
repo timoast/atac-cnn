@@ -11,14 +11,12 @@ import numpy as np
 from argparse import ArgumentParser
 
 
-# TODO: should pre-compute 1hot encoding for whole genome, then store in compressed indexed format and read in as needed. Or store whole thing in memory.
-def one_hot(string, bases = {'A':0, 'C':1, 'G':2, 'T':3}):
-    """Convert DNA sequence to 1-hot array"""
-    res = np.zeros( (4,len(string)), dtype=np.float32 )
-    for j in range(len(string)):
-        if string[j] in bases:
-            res[ bases[ string[j] ], j ]=float(1.0)
-    return(res)
+def one_hot(dna):
+    """One-hot encoding for DNA sequence. N encoded as [0.,0.,0.,0.]"""
+    dna = dna.upper()
+    d = {'A':0, 'C':1, 'G':2, 'T':3, 'N':4}
+    oh = torch.nn.functional.one_hot(torch.tensor([d[x] for x in dna]))
+    return(oh[:,0:4].t().type(torch.FloatTensor))
 
 
 def get_final_layer_input_size(in_width, pool_sizes, n_kernels):
