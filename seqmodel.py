@@ -48,7 +48,6 @@ class SeqData(torch.utils.data.IterableDataset):
             region_end = midpoint + int(self.window / 2)
             fasta = self.genome[coords[0]][region_start:region_end]
             hot = one_hot(fasta)
-            hot = torch.tensor(hot)
             yield(hot, torch.tensor(row[1]))
 
 
