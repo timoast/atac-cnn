@@ -5,59 +5,9 @@ from torch.utils.data import DataLoader
 import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning import Trainer
-from pyfaidx import Fasta
 import pandas as pd
 import numpy as np
 from argparse import ArgumentParser
-
-
-def one_hot(dna):
-    """One-hot encoding for DNA sequence. N encoded as [0.,0.,0.,0.]"""
-    dna = dna.upper()
-    d = {'A':0, 'C':1, 'G':2, 'T':3, 'N':4}
-    oh = torch.nn.functional.one_hot(torch.tensor([d[x] for x in dna]))
-    return(oh[:,0:4].t().type(torch.FloatTensor))
-
-
-def get_final_layer_input_size(in_width, pool_sizes, n_kernels):
-    """Return size of final layer after series of same convolutions with max pooling between"""
-    out_size = in_width
-    for i in range(len(pool_sizes)):
-        out_size = int(out_size / pool_sizes[i])
-    out_size = out_size * n_kernels[i]
-    return out_size
-
-
-class SeqData(torch.utils.data.IterableDataset):
-    """Dataloader for sequence data. Compatible with torch DataLoader"""
-
-    def __init__(self, genome: str, data_path: str, window: int = 1000):
-        super().__init__()
-        self.genome = Fasta(genome, as_raw=True)
-        self.matrix = pd.read_table(data_path, sep="\t")
-        self.window = window
-    
-    def __iter__(self):
-        for row in self.matrix.iterrows():
-            coords = row[0].split("-")
-            startpos = int(coords[1])
-            endpos = int(coords[2])
-            width = endpos - startpos
-            midpoint = startpos + int(width / 2)
-            region_start = midpoint - int(self.window / 2)
-            region_end = midpoint + int(self.window / 2)
-            fasta = self.genome[coords[0]][region_start:region_end]
-            hot = one_hot(fasta)
-            yield(hot, torch.tensor(row[1]))
-
-
-class Exponential(nn.Module):
-    """Exponential activation function for use with nn.Sequential"""
-    def __init__(self):
-        super().__init__()
-    
-    def forward(self, input):
-        return torch.exp(input)
 
 
 class SeqModel(pl.LightningModule):
@@ -167,7 +117,7 @@ class SeqModel(pl.LightningModule):
 def main(args):
     # logger
     logger = pl_loggers.CometLogger(
-        api_key="CqZ4OZlEj1rN92susoom7kSjG",
+        api_key=args.key,
         project_name="hparam_tests",
         experiment_name=args.exp_name
     )
@@ -203,6 +153,7 @@ if __name__ == '__main__':
     parser.add_argument("--train_data", help="Path to training data", type=str, required=True)
     parser.add_argument("--val_data", help="Path to validation data", type=str, required=True)
     parser.add_argument("--genome", help="Path to genome fasta file", type=str, required=True)
+    parser.add_argument("--key", help="API key for logger", type=str, required=True)
     args = parser.parse_args()
 
     main(args)
