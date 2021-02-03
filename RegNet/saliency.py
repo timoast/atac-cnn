@@ -16,6 +16,7 @@ def saliency_map(model, inputs, device="cuda"):
         saliency = saliency.cpu()
         return saliency
 
+
 def ism(model, inputs, device = "cuda"):
     with torch.set_grad_enabled(False):
         model = model.to(device)

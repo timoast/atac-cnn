@@ -9,6 +9,8 @@ import pandas as pd
 import numpy as np
 from argparse import ArgumentParser
 
+from RegNet import utils
+
 
 class SeqModel(pl.LightningModule):
     """Convolutional neural network to predict normalized accessibility from sequence, for different cell types"""
@@ -29,7 +31,7 @@ class SeqModel(pl.LightningModule):
     ):
         super().__init__()
         
-        out_size = get_final_layer_input_size(
+        out_size = utils.get_final_layer_input_size(
             in_width=in_width,
             pool_sizes=pool_sizes,
             n_kernels=n_kernels
@@ -44,7 +46,7 @@ class SeqModel(pl.LightningModule):
                 padding=int((kernel_size[0]-1)/2)
             ),
             nn.BatchNorm1d(n_kernels[0]),
-            Exponential(),
+            utils.Exponential(),
             nn.MaxPool1d(kernel_size=pool_sizes[0], stride=pool_sizes[0]),
             nn.Dropout2d(dropout_conv),
         )
