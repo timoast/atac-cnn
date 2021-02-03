@@ -147,6 +147,50 @@ def main(args):
     # run model (saved automatically)
     trainer.fit(model, train_loader, val_loader)
 
+
+# new model for determining filter influence
+# based on AI-TAC
+class MotifModel(nn.Module):
+
+    def __init__(self, original_model):
+        super(MotifModel, self).__init__()
+        # extract first layer weights from the model
+        self.conv1 = list(original_model.children())[0][0]
+        self.process_conv1 = list(original_model.children())[0][1:]
+        self.get_outputs = nn.Sequential(*list(original_model.children())[1:])
+        # NOTE this is specific to the original model architecture, will need to update if changing models
+        
+    def forward(self, inputs):
+        conv1_outs = self.conv1(inputs)
+        
+        # save first layer filter activations
+        layer1_activations = torch.squeeze(conv1_outs)
+        
+        # get predicted outputs using all filters
+        conv1_outs = self.process_conv1(conv1_outs)
+        outs = self.get_outputs(conv1_outs)
+        
+        # remove each filter one at a time are record output vector
+        batch_size = conv1_outs.shape[0]
+        # NOTE dimensions here depend on model architecture
+        n_filters = 300
+        batch_size = conv1_outs.shape[0]
+        n_class = 15
+        n_bases = 1000
+        predictions = torch.zeros(batch_size, n_filters, n_class)
+        
+        for i in range(n_filters):
+            #modify filter i of first layer output
+            filter_input = conv1_outs.clone()
+            
+            # setting filter outputs to zero. AI-TAC sets it to the batch mean value
+            filter_input[:,i,:] = filter_input.new_full((batch_size, n_bases), fill_value=0)
+            pred_filter_removed = self.get_outputs(filter_input)
+            predictions[:,i,:] = outs - pred_filter_removed
+        
+        return layer1_activations.detach(), outs.detach(), predictions.detach()
+
+
 if __name__ == '__main__':
     parser = ArgumentParser(description="Convolutional neural network: predict accessibility from sequence")
     parser.add_argument("--n_hidden", help="Number of neurons in final dense layer", type=int, required=True)
